@@ -35,6 +35,7 @@ type btc_utxo {
 scalar JSON
 
 type Mutation {
+  btc_tx_send(signedTx: String!): btc_tx_signed!
   btc_tx_signed(fee: Int!, id: Int!, outputs: String!): btc_tx_signed!
 }
 

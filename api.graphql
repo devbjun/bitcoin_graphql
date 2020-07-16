@@ -18,6 +18,10 @@ type btc_history {
   utxo: [JSON!]
 }
 
+type btc_tx_hash {
+  txHash: String
+}
+
 type btc_tx_history {
   data: JSON
 }
@@ -47,6 +51,7 @@ scalar Json
 scalar JSON
 
 type Mutation {
+  btc_tx_send(signedTx: String!): btc_tx_signed
   btc_tx_signed(fee: Int!, id: Int!, outputs: String!): btc_tx_signed
 }
 

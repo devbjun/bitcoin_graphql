@@ -1,6 +1,6 @@
 import { core, intArg, stringArg } from '@nexus/schema'
-
 import { payments, Psbt, crypto, address as validation } from 'bitcoinjs-lib'
+import axios from 'axios'
 
 import BTC from './query'
 
@@ -20,8 +20,8 @@ const signedTx = (): core.NexusOutputFieldConfig<'Mutation', 'btc_tx_signed'> & 
     },
     async resolve(_, args, ctx, info): Promise<any> {
 
-      const outputs: { [key: string]: any }[] = JSON.parse(args.outputs)
-      const outputBalance = outputs.map((item) => item.value).reduce((prev, curr) => prev + curr)
+      const outputs = JSON.parse(args.outputs)
+      const outputBalance = outputs.map((item: { [key: string]: any }) => item.value).reduce((prev: number, curr: number) => prev + curr)
 
       const history = await BTC.getHistory().resolve(_, { id: args.id }, ctx, info)
       const address = history?.address?.toString()
@@ -32,7 +32,7 @@ const signedTx = (): core.NexusOutputFieldConfig<'Mutation', 'btc_tx_signed'> & 
       if (address && balance && utxo && parseFloat(balance) >= outputBalance + args.fee) {
 
         // Address Checking
-        outputs.map((data) => validation.fromBase58Check(data.address))
+        outputs.map((data: { [key: string]: any }) => validation.fromBase58Check(data.address))
 
         const redeemScript = payments.p2wpkh({
           pubkey: BTC.getRoot(`m/44'/0'/${args.id}'/0/0`).publicKey,
@@ -80,4 +80,32 @@ const signedTx = (): core.NexusOutputFieldConfig<'Mutation', 'btc_tx_signed'> & 
   }
 }
 
-export default { signedTx }
+const sendTx = (): core.NexusOutputFieldConfig<'Mutation', 'btc_tx_send'> & {
+  resolve: core.FieldResolver<'Mutation', 'btc_tx_send'>
+} => {
+  return {
+    type: btcTxSigned,
+    args: {
+      signedTx: stringArg({ required: true })
+    },
+    async resolve(_, args): Promise<any> {
+      const result = await axios({
+        method: 'post',
+        url: `https://api.blockchair.com/bitcoin/testnet/push/transaction/`,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        data: JSON.stringify({
+          data: args.signedTx,
+        }),
+      })
+  
+      return {
+        txHash: result.data.data.transaction_hash
+      }
+    },
+  }
+}
+
+export default { signedTx, sendTx }
