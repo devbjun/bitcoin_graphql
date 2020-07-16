@@ -12,6 +12,21 @@ type btc_balance {
   balance: Float
 }
 
+type btc_history {
+  address: String
+  balance: Int
+  utxo: [JSON!]
+}
+
+type btc_tx_history {
+  data: JSON
+}
+
+type btc_tx_signed {
+  signedTx: String
+  txHash: String
+}
+
 type btc_utxo {
   address: String
   utxo: [JSON!]
@@ -31,8 +46,14 @@ scalar Json
 
 scalar JSON
 
+type Mutation {
+  btc_tx_signed(fee: Int!, id: Int!, outputs: String!): btc_tx_signed
+}
+
 type Query {
   btc_address(id: Int!): btc_address
-  btc_balance(address: String!): btc_balance
-  btc_utxo(address: String!): btc_utxo
+  btc_balance(id: Int!): btc_balance
+  btc_history(id: Int!): btc_history
+  btc_tx_history(txId: String!): btc_tx_history
+  btc_utxo(id: Int!): btc_utxo
 }
